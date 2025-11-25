@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel da Loja</title>
+    <link rel="stylesheet" href="painel.css">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2 id="nome-loja">Loja</h2></div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="#" onclick="mostrar('pedidos')">📦 Pedidos</a></li>
+                <li><a href="#" onclick="mostrar('produtos')">🍔 Produtos</a></li>
+                <li><a href="admin.html" id="btn-voltar-admin" style="display:none; color: orange;">🔙 Voltar Admin</a></li>
+                <li><a href="login.html" onclick="localStorage.clear()">🚪 Sair</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div id="view-pedidos" class="view active">
+            <h1>Pedidos em Tempo Real</h1>
+            <div id="lista-pedidos"></div>
+        </div>
+
+        <div id="view-produtos" class="view" style="display:none;">
+            <h1>Cardápio</h1>
+            <div style="margin-bottom:20px;">
+                <select id="cat-select"></select>
+                <input id="prod-nome" placeholder="Nome Produto">
+                <input id="prod-preco" placeholder="Preço" type="number">
+                <button onclick="addProduto()">Adicionar</button>
+            </div>
+            <div id="lista-produtos"></div>
+        </div>
+    </div>
+
+    <script src="painel.js"></script>
+</body>
+</html>

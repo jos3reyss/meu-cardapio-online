@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Mestre</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #111827; color: #f3f4f6; font-family: sans-serif; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid #374151; padding-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #1f2937; padding: 20px; border-radius: 12px; border: 1px solid #374151; }
+        .card h3 { margin-top: 0; color: white; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; margin-top: 10px; font-size: 13px; }
+        .btn-primary { background: #6366f1; width: 100%; text-align: center; }
+        .btn-access { background: #f59e0b; margin-right: 5px; }
+        .btn-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+        /* Modal */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; }
+        .modal-content { background: #1f2937; padding: 30px; border-radius: 12px; width: 400px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: #111827; border: 1px solid #4b5563; color: white; border-radius: 6px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👑 Mestre</h1>
+        <div>
+            <button class="btn btn-danger" onclick="localStorage.clear(); window.location.href='login.html'">Sair</button>
+            <button class="btn btn-primary" style="width: auto; margin-left: 10px;" onclick="document.getElementById('modal-loja').style.display='flex'">+ Nova Loja</button>
+        </div>
+    </div>
+
+    <div id="lista-lojas" class="grid">Loading...</div>
+
+    <div id="modal-loja" class="modal">
+        <div class="modal-content">
+            <h2>Nova Loja</h2>
+            <form id="form-loja">
+                <input type="text" id="nome" placeholder="Nome da Loja" required>
+                <input type="text" id="slug" placeholder="slug-sem-espacos" required>
+                <input type="text" id="logo" placeholder="URL da Logo (Opcional)">
+                <button type="submit" class="btn btn-primary">Criar</button>
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('modal-loja').style.display='none'" style="width:100%; margin-top:5px;">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://meu-delivery-app.onrender.com';
+        
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem('token');
+            if (!token) window.location.href = 'login.html';
+
+            // Carregar Lojas
+            const res = await fetch(`${API_URL}/admin/lojas`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const lojas = await res.json();
+            
+            const container = document.getElementById('lista-lojas');
+            container.innerHTML = '';
+            
+            lojas.forEach(loja => {
+                // GERA O LINK CORRETO PARA O GITHUB PAGES
+                const linkSite = `https://jos3reyss.github.io/meu-cardapio-online/app.html?loja=${loja.slug}`;
+                
+                container.innerHTML += `
+                    <div class="card">
+                        <h3>${loja.nome_loja}</h3>
+                        <p style="color:#9ca3af; font-size:12px;">/${loja.slug}</p>
+                        <p style="font-size:13px;">📧 ${loja.email}</p>
+                        <div style="margin-top:15px;">
+                            <button class="btn btn-access" onclick="acessarPainel(${loja.id})">Painel</button>
+                            <a href="${linkSite}" target="_blank" class="btn btn-primary">Ver Site</a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Criar Loja
+            document.getElementById('form-loja').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await fetch(`${API_URL}/admin/lojas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        nome: document.getElementById('nome').value,
+                        slug: document.getElementById('slug').value,
+                        logo_url: document.getElementById('logo').value,
+                        cor_primaria: '#000000'
+                    })
+                });
+                location.reload();
+            });
+
+            window.acessarPainel = (id) => {
+                window.location.href = `painel.html?targetLoja=${id}`;
+            };
+        });
+    </script>
+</body>
+</html>

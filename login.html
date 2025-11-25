@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Delivery</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="brand-logo">🚀</div>
+            <h1>Painel de Controle</h1>
+            <p>Gerencie seu delivery em um só lugar</p>
+        </div>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrapper">
+                    <input type="email" id="email" required placeholder="seu@email.com">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <div class="input-wrapper">
+                    <input type="password" id="senha" required placeholder="••••••">
+                </div>
+            </div>
+            <button type="submit" id="btn-entrar" class="btn-login">Acessar Painel</button>
+            <div id="login-status-msg" class="status-msg" style="display: none;"></div>
+        </form>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html>

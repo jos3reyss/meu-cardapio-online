@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>body{font-family:'Inter',sans-serif;background:#f3f4f6;}</style>
+</head>
+<body>
+    <div id="loader" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="animate-spin h-10 w-10 border-4 border-blue-600 rounded-full border-t-transparent"></div>
+    </div>
+
+    <div id="app" class="container mx-auto max-w-xl p-4 hidden pb-24">
+        <header class="bg-white p-6 rounded-xl shadow text-center mb-6">
+            <img id="logo" class="h-24 mx-auto rounded mb-3 hidden">
+            <h1 id="nome-loja" class="text-2xl font-bold"></h1>
+            <p id="status-loja" class="text-green-600 font-bold text-sm mt-2">Aberto</p>
+        </header>
+
+        <div id="cardapio"></div>
+    </div>
+
+    <button onclick="toggleCart()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg font-bold">
+        🛒 <span id="cart-count">0</span>
+    </button>
+
+    <div id="modal-cart" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+        <div class="bg-white w-full sm:max-w-md p-4 rounded-t-xl sm:rounded-xl h-[80vh] flex flex-col">
+            <div class="flex justify-between mb-4">
+                <h2 class="font-bold text-xl">Carrinho</h2>
+                <button onclick="toggleCart()">✕</button>
+            </div>
+            <div id="cart-items" class="flex-grow overflow-y-auto"></div>
+            <div class="mt-4 border-t pt-4">
+                <div class="flex justify-between font-bold text-lg mb-4">
+                    <span>Total:</span> <span id="cart-total">R$ 0,00</span>
+                </div>
+                <input id="cli-nome" placeholder="Seu Nome" class="w-full border p-2 rounded mb-2">
+                <input id="cli-tel" placeholder="WhatsApp" class="w-full border p-2 rounded mb-2">
+                <input id="cli-end" placeholder="Endereço" class="w-full border p-2 rounded mb-2">
+                <select id="cli-pag" class="w-full border p-2 rounded mb-4">
+                    <option>PIX</option><option>Cartão</option><option>Dinheiro</option>
+                </select>
+                <button onclick="enviarPedido()" class="w-full bg-green-600 text-white py-3 rounded font-bold">ENVIAR PEDIDO</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://meu-delivery-app.onrender.com';
+        let cart = [];
+        let lojaId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const slug = new URLSearchParams(window.location.search).get('loja');
+            if(!slug) return alert('Loja não encontrada');
+
+            try {
+                const res = await fetch(`${API_URL}/cardapio/${slug}`);
+                const data = await res.json();
+                
+                lojaId = data.loja.id;
+                document.title = data.loja.nome;
+                document.getElementById('nome-loja').innerText = data.loja.nome;
+                
+                if(data.loja.logo) {
+                    document.getElementById('logo').src = data.loja.logo;
+                    document.getElementById('logo').classList.remove('hidden');
+                }
+                
+                if(!data.lojaStatus.aberta) {
+                    document.getElementById('status-loja').innerText = "FECHADO";
+                    document.getElementById('status-loja').className = "text-red-600 font-bold text-sm mt-2";
+                }
+
+                const menu = document.getElementById('cardapio');
+                data.cardapio.forEach(cat => {
+                    menu.innerHTML += `<h2 class="font-bold text-lg mt-6 mb-2 text-gray-700">${cat.nome}</h2>`;
+                    cat.produtos.forEach(prod => {
+                        menu.innerHTML += `
+                            <div class="bg-white p-3 rounded shadow flex justify-between items-center mb-3">
+                                <div>
+                                    <div class="font-bold">${prod.nome}</div>
+                                    <div class="text-sm text-gray-500">R$ ${parseFloat(prod.preco).toFixed(2)}</div>
+                                </div>
+                                <button onclick='addCart(${JSON.stringify(prod)})' class="bg-blue-100 text-blue-700 px-3 py-1 rounded font-bold text-sm">+</button>
+                            </div>
+                        `;
+                    });
+                });
+
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+
+            } catch(e) { alert('Erro ao carregar'); }
+        });
+
+        function addCart(prod) {
+            cart.push(prod);
+            updateCart();
+        }
+
+        function updateCart() {
+            document.getElementById('cart-count').innerText = cart.length;
+            const total = cart.reduce((a,b) => a + parseFloat(b.preco), 0);
+            document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+            
+            document.getElementById('cart-items').innerHTML = cart.map((p, i) => `
+                <div class="flex justify-between border-b py-2">
+                    <span>${p.nome}</span>
+                    <button onclick="cart.splice(${i},1); updateCart()" class="text-red-500 font-bold">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function toggleCart() {
+            document.getElementById('modal-cart').classList.toggle('hidden');
+        }
+
+        async function enviarPedido() {
+            const nome = document.getElementById('cli-nome').value;
+            const tel = document.getElementById('cli-tel').value;
+            const end = document.getElementById('cli-end').value;
+            
+            if(!nome || !tel) return alert('Preencha seus dados');
+
+            await fetch(`${API_URL}/pedidos`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    id_loja: lojaId,
+                    cliente: { nome, telefone: tel, endereco: end, numero: 'SN', bairro:'', referencia:'' },
+                    itens: cart.map(p => ({ id_produto_original: p.id, nome: p.nome, quantidade: 1, preco_unitario: p.preco, detalhes: null })),
+                    pagamento: { metodo: document.getElementById('cli-pag').value, troco_para: null },
+                    observacoes: '',
+                    valor_total: cart.reduce((a,b) => a + parseFloat(b.preco), 0)
+                })
+            });
+            
+            alert('Pedido enviado!');
+            cart = [];
+            updateCart();
+            toggleCart();
+        }
+    </script>
+</body>
+</html>
